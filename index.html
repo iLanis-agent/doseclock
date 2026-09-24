@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DoseClock - what time is "three times a day", exactly?</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:#101820; color:#e9f0f5; min-height:100vh; }
+  .wrap { max-width:720px; margin:0 auto; padding:64px 24px; }
+  .tag { color:#5fd0b7; font-weight:600; letter-spacing:2px; text-transform:uppercase; font-size:12px; }
+  h1 { font-size:clamp(34px,6vw,52px); line-height:1.1; margin:14px 0 18px; }
+  h1 span { color:#5fd0b7; }
+  p.lead { font-size:18px; color:#a7b6c2; max-width:560px; line-height:1.6; }
+  .cta { display:inline-block; margin-top:32px; background:#5fd0b7; color:#0a1a15; font-weight:700; padding:14px 32px; border-radius:10px; text-decoration:none; font-size:16px; }
+  .cta:hover { background:#7ee0ca; }
+  .feats { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:16px; margin-top:56px; }
+  .feat { background:#16222b; border:1px solid #23404a; border-radius:12px; padding:20px; }
+  .feat b { display:block; margin-bottom:6px; color:#fff; }
+  .feat p { color:#8fa4b0; font-size:14px; line-height:1.5; }
+  .foot { margin-top:56px; color:#5c6b75; font-size:13px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="tag">DoseClock</div>
+  <h1>"Three times a day" is <span>not a time</span>.</h1>
+  <p class="lead">Tell DoseClock when you wake, when you sleep, and how many doses the label says. It turns the instruction into real clock times, evenly spread across your waking hours, with the required gap between doses - and snaps to mealtimes when the label says "with food".</p>
+  <a class="cta" href="app.html">Build my schedule</a>
+  <div class="feats">
+    <div class="feat"><b>Real clock times</b><p>No more guessing whether 3x a day means every 8 hours or breakfast-lunch-dinner. See the exact times, rounded to the nearest 5 minutes.</p></div>
+    <div class="feat"><b>Gap enforcement</b><p>Needs 6 hours between doses but your day only fits two? DoseClock says so, and tells you the most your waking window can hold.</p></div>
+    <div class="feat"><b>Private by design</b><p>Runs entirely in your browser. Nothing about your medication leaves the device.</p></div>
+  </div>
+  <div class="foot">DoseClock is a scheduling aid, not medical advice - always follow your pharmacist's instructions.</div>
+</div>
+</body>
+</html>
