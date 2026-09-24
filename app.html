@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DoseClock - scheduler</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:#101820; color:#e9f0f5; min-height:100vh; }
+  .wrap { max-width:680px; margin:0 auto; padding:28px 20px 80px; }
+  header { display:flex; justify-content:space-between; align-items:center; margin-bottom:22px; }
+  header h1 { font-size:22px; } header h1 span { color:#5fd0b7; }
+  header a { color:#8fa4b0; text-decoration:none; font-size:14px; }
+  .card { background:#16222b; border:1px solid #23404a; border-radius:12px; padding:18px; margin-bottom:18px; }
+  label { font-size:12px; color:#8fa4b0; display:block; margin-bottom:4px; }
+  input, select { background:#101820; border:1px solid #2a4a56; border-radius:8px; color:#e9f0f5; padding:9px 10px; font-size:14px; width:100%; }
+  .row { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px; }
+  .row3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:12px; }
+  button { background:#5fd0b7; border:none; color:#0a1a15; font-weight:700; padding:11px 22px; border-radius:9px; font-size:14px; cursor:pointer; }
+  button:hover { filter:brightness(1.1); }
+  .chk { display:flex; align-items:center; gap:8px; font-size:14px; color:#c3d2db; margin:6px 0 14px; }
+  .chk input { width:auto; }
+  #meals { display:none; }
+  .dose { display:flex; align-items:baseline; gap:14px; padding:12px 0; border-bottom:1px solid #1d3038; font-size:16px; }
+  .dose:last-child { border-bottom:none; }
+  .dose .tm { color:#5fd0b7; font-size:22px; font-weight:700; font-variant-numeric:tabular-nums; }
+  .dose .gp { color:#8fa4b0; font-size:13px; margin-left:auto; }
+  .warn { background:#3a2a13; border:1px solid #8a6a22; color:#ffd987; padding:12px 14px; border-radius:10px; margin-bottom:14px; font-size:14px; line-height:1.5; }
+  .fine { color:#647681; font-size:12px; margin-top:14px; line-height:1.5; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><h1>Dose<span>Clock</span></h1><a href="index.html">home</a></header>
+
+  <div class="card">
+    <div class="row">
+      <div><label>Wake up</label><input id="wake" type="time" value="07:00"></div>
+      <div><label>Sleep</label><input id="sleep" type="time" value="23:00"></div>
+    </div>
+    <div class="row3">
+      <div><label>Doses per day</label>
+        <select id="doses"><option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option><option>6</option></select></div>
+      <div><label>Min gap between doses</label>
+        <select id="gap"><option value="0">none</option><option value="120">2 h</option><option value="240" selected>4 h</option><option value="360">6 h</option><option value="480">8 h</option></select></div>
+      <div><label>&nbsp;</label><button id="go" style="width:100%">Schedule</button></div>
+    </div>
+    <div class="chk"><input type="checkbox" id="food"><label for="food" style="margin:0;font-size:14px">Take with food - snap to my mealtimes</label></div>
+    <div id="meals">
+      <div class="row3">
+        <div><label>Breakfast</label><input id="m1" type="time" value="07:45"></div>
+        <div><label>Lunch</label><input id="m2" type="time" value="13:00"></div>
+        <div><label>Dinner</label><input id="m3" type="time" value="19:00"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="out"></div>
+  <div class="fine">DoseClock spreads doses across your waking hours. It is a scheduling aid, not medical advice - some medicines truly need every-8-hours around the clock. Follow your pharmacist.</div>
+</div>
+<script src="engine.js"></script>
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  try {
+    const s = JSON.parse(localStorage.getItem('doseclock-settings') || '{}');
+    if (s.wake) $('wake').value = s.wake;
+    if (s.sleep) $('sleep').value = s.sleep;
+    if (s.doses) $('doses').value = s.doses;
+    if (s.gap !== undefined) $('gap').value = s.gap;
+    if (s.food) $('food').checked = true;
+    if (s.m1) $('m1').value = s.m1;
+    if (s.m2) $('m2').value = s.m2;
+    if (s.m3) $('m3').value = s.m3;
+  } catch(e) {}
+  $('food').onchange = () => { $('meals').style.display = $('food').checked ? 'block' : 'none'; };
+  if ($('food').checked) $('meals').style.display = 'block';
+
+  function esc(s){ return s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+  $('go').onclick = () => {
+    const out = $('out');
+    let p;
+    try {
+      const settings = { wake:$('wake').value, sleep:$('sleep').value, doses:$('doses').value, gap:$('gap').value, food:$('food').checked, m1:$('m1').value, m2:$('m2').value, m3:$('m3').value };
+      localStorage.setItem('doseclock-settings', JSON.stringify(settings));
+      const meals = $('food').checked ? [$('m1').value, $('m2').value, $('m3').value].map(v => DoseEngine.parseTime(v)) : null;
+      p = DoseEngine.plan({
+        wakeMin: DoseEngine.parseTime($('wake').value),
+        sleepMin: DoseEngine.parseTime($('sleep').value),
+        doses: +$('doses').value,
+        minGapMin: +$('gap').value,
+        withFood: $('food').checked,
+        mealsMin: meals
+      });
+    } catch(e) {
+      out.innerHTML = '<div class="warn">' + esc(e.message) + '</div>';
+      return;
+    }
+    if (!p.feasible) {
+      out.innerHTML = '<div class="warn"><b>Does not fit.</b> ' + esc(p.reason) + '</div>';
+      return;
+    }
+    const s = DoseEngine.summarize(p);
+    let html = '<div class="card">';
+    s.timesText.forEach((tm, i) => {
+      const gapTxt = i < s.gapsText.length ? '+' + s.gapsText[i] + ' to next dose' : 'last dose of the day';
+      html += '<div class="dose"><span class="tm">' + tm + '</span><span>Dose ' + (i+1) + '</span><span class="gp">' + gapTxt + '</span></div>';
+    });
+    html += '</div>';
+    out.innerHTML = html;
+  };
+})();
+</script>
+</body>
+</html>
